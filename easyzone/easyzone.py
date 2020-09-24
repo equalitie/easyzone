@@ -10,15 +10,13 @@ for common zone file manipulation use cases.
 
 __author__ = 'Chris Miles'
 __copyright__ = '(c) Chris Miles 2007-2011'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 
 # ---- Imports ----
 
 # - Python Modules -
 from time import localtime, strftime, time
-import types
-import codecs
 
 # - dnspython Modules - http://www.dnspython.org/
 try:
@@ -134,24 +132,24 @@ class Records(object):
 
     def add(self, item):
         if self.type == 'MX':
-            assert type(item) == types.TupleType
+            assert type(item) == tuple
             assert len(item) == 2
-            assert type(item[0]) == types.IntType
-            assert type(item[1]) == types.StringType
+            assert type(item[0]) == int
+            assert type(item[1]) == str
         elif self.type == 'SRV':
-            assert type(item) == types.TupleType
+            assert type(item) == tuple
             assert len(item) == 4
-            assert type(item[0]) == types.IntType
-            assert type(item[1]) == types.IntType
-            assert type(item[2]) == types.IntType
-            assert type(item[3]) == types.StringType
+            assert type(item[0]) == int
+            assert type(item[1]) == int
+            assert type(item[2]) == int
+            assert type(item[3]) == str
         elif self.type == 'TXT':
-            assert type(item) == types.StringType
+            assert type(item) == str
             if item.startswith('"') and item.endswith('"'):
                 # strip quotes off both ends; dns module will add them automatically
                 item = item[1:-1]
         else:
-            assert type(item) == types.StringType
+            assert type(item) == str
 
         rd = _new_rdata(self.type, item)
         self._rdataset.add(rd)
@@ -178,15 +176,15 @@ class Records(object):
         self._item_iter = iter(self._rdataset.items)
         return self
 
-    def next(self):
+    def __next__(self):
         if self.type == 'MX':
-            r = self._item_iter.next()
+            r = next(self._item_iter)
             return (r.preference, str(r.exchange))
         if self.type == 'SRV':
-            r = self._item_iter.next()
+            r = next(self._item_iter)
             return (r.priority, r.weight, r.port, str(r.target))
         else:
-            return str(self._item_iter.next())
+            return str(next(self._item_iter))
 
     def get_items(self):
         return [r for r in self]
@@ -266,7 +264,7 @@ class Zone(object):
     '''Represents a DNS zone.
     '''
     def __init__(self, domain):
-        if not domain or not isinstance(domain, types.StringTypes):
+        if not domain or not isinstance(domain, str):
             raise ZoneError('Invalid domain')
         if domain[-1] != '.':
             domain = domain + '.'
@@ -292,12 +290,12 @@ class Zone(object):
     def get_names(self):
         '''Return a dictionary of names, keyed by name as string,
         with values as corresponding Name objects.'''
+        names = {}
         if not self._zone:
-            return None
+            return names
 
         default_ttl = soa_from_node(self._zone[self.domain]).minimum
 
-        names = {}
         for name in self._zone.keys():
             name = str(name)
             nameobj = Name(name, self._zone[name], default_ttl)

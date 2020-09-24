@@ -4,7 +4,9 @@ Includes AAAAA/SRV/PTR records from provnet here:
 https://bitbucket.org/chrismiles/easyzone/pull-request/1/add-include-option-to-clear_all_records/diff
 
 Also fixes up Exception so they derive from an EasyZone Exception base class,
-and don't overwtire NameError
+and don't overwtire NameError.
+
+Fix for python3.
 
 easyzone
 ========
@@ -33,7 +35,7 @@ https://bitbucket.org/chrismiles/easyzone/
 Requirements
 ------------
 
-  * dnspython - http://www.dnspython.org/
+  * dnspython3 - http://www.dnspython.org/
 
 
 Build/Test/Install
@@ -54,7 +56,11 @@ Install::
 
 OR with setuptools::
 
-  $ easy_install easyzone
+  $ easy_install easyzone3
+
+OR with pip::
+
+  $ pip install easyzone3
 
 
 Examples
@@ -95,7 +101,7 @@ ZoneCheck::
   False
   >>> c.error
   'Bad syntax'
-  >>> 
+  >>>
   >>> c = ZoneCheck(checkzone='/usr/sbin/named-checkzone')
   >>> c.isValid('example.com', '/var/named/zones/example.com')
   True
@@ -114,7 +120,7 @@ ZoneReload::
     File "easyzone/zone_reload.py", line 51, in reload
       raise ZoneReloadError("rndc failed with return code %d" % r)
   easyzone.zone_reload.ZoneReloadError: rndc failed with return code 1
-  >>> 
+  >>>
   >>> r = ZoneReload(rndc='/usr/sbin/rndc')
   >>> r.reload('example.com')
   zone reload up-to-date
