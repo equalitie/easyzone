@@ -12,7 +12,6 @@ __author__ = 'Chris Miles'
 __copyright__ = '(c) Chris Miles 2007-2011'
 __version__ = '1.2.3'
 
-
 # ---- Imports ----
 
 # - Python Modules -
@@ -23,6 +22,7 @@ try:
     import dns.zone
 except ImportError:
     import sys
+
     sys.stderr.write("Requires dns module from http://www.dnspython.org/\n")
     sys.exit(1)
 
@@ -42,15 +42,17 @@ class EasyZoneException(Exception):
     ''' Exception which all eazy zone exceptions derive from '''
     pass
 
+
 class ZoneError(EasyZoneException):
     '''An error from easyzone.Zone'''
+
 
 class ZoneNameError(EasyZoneException):
     '''An error from easyzone.Name'''
 
+
 class RecordsError(EasyZoneException):
     '''An error from easyzone.Records'''
-
 
 
 # ---- Classes ----
@@ -58,6 +60,7 @@ class RecordsError(EasyZoneException):
 class SOA(object):
     '''Represents the SOA fields of the root node of a Zone.
     '''
+
     def __init__(self, soa):
         self._soa = soa
 
@@ -65,7 +68,7 @@ class SOA(object):
         return str(self._soa.mname)
 
     def set_mname(self, value):
-        name = dns.name.Name( value.split('.') )
+        name = dns.name.Name(value.split('.'))
         self._soa.mname = name
 
     mname = property(get_mname, set_mname)
@@ -74,7 +77,7 @@ class SOA(object):
         return str(self._soa.rname)
 
     def set_rname(self, value):
-        name = dns.name.Name( value.split('.') )
+        name = dns.name.Name(value.split('.'))
         self._soa.rname = name
 
     rname = property(get_rname, set_rname)
@@ -120,12 +123,12 @@ class SOA(object):
     minttl = property(get_minttl, set_minttl)
 
 
-
 class Records(object):
     '''Represents the records associated with a name node.
     Record items are common DNS types such as 'A', 'MX',
     'NS', etc.
     '''
+
     def __init__(self, rectype, rdataset):
         self.type = rectype
         self._rdataset = rdataset
@@ -170,7 +173,7 @@ class Records(object):
         try:
             self._rdataset.remove(rd)
         except ValueError:
-            raise RecordsError("No such item in record: %s" %item)
+            raise RecordsError("No such item in record: %s" % item)
 
     def __iter__(self):
         self._item_iter = iter(self._rdataset.items)
@@ -206,6 +209,7 @@ class Name(object):
     If the node contains SOA fields (i.e. the  root ('@') node)
     then the `soa` attribute points to an SOA object.
     '''
+
     def __init__(self, name, node=None, ttl=None):
         self.name = name
         self.soa = None
@@ -217,10 +221,14 @@ class Name(object):
             if soa:
                 self.soa = SOA(soa)
 
+    def get_all_records(self):
+        # Get all rdatasets and map them to Records with the right type for each rdataset
+        return list(map(lambda rdataset: Records(rdataset.rdtype, rdataset), self._node.rdatasets))
+
     def records(self, rectype, create=False, ttl=None):
         typeval = dns.rdatatype._by_text.get(rectype, None)
         if typeval is None:
-            raise ZoneNameError("Invalid type: %s" %rectype)
+            raise ZoneNameError("Invalid type: %s" % rectype)
 
         r = self._node.get_rdataset(dns.rdataclass.IN, typeval, create=create)
 
@@ -263,6 +271,7 @@ class Name(object):
 class Zone(object):
     '''Represents a DNS zone.
     '''
+
     def __init__(self, domain):
         if not domain or not isinstance(domain, str):
             raise ZoneError('Invalid domain')
@@ -285,6 +294,7 @@ class Zone(object):
             return None
 
         return Name('@', self._zone[self.domain])
+
     root = property(get_root)
 
     def get_names(self):
@@ -302,6 +312,7 @@ class Zone(object):
             names[name] = nameobj
 
         return names
+
     names = property(get_names)
 
     def add_name(self, name):
@@ -310,7 +321,7 @@ class Zone(object):
         '''
         node = self._zone.get_node(name, create=True)
         if node is None:
-            raise ZoneError("Could not create node named: %s" %name)
+            raise ZoneError("Could not create node named: %s" % name)
 
     def delete_name(self, name):
         '''Remove all nodes associated with a name (hostname) from the zone.
@@ -340,10 +351,6 @@ class Zone(object):
         self._zone.to_file(filename, relativize=False)
 
 
-
-
-
-
 # ---- Module Functions ----
 
 def zone_from_file(domain, filename):
@@ -360,21 +367,21 @@ def _new_rdata(rectype, *args):
     Extra arguments are as required by the rectype.
     '''
     if rectype == 'NS':
-        name = dns.name.Name( args[0].split('.') )
+        name = dns.name.Name(args[0].split('.'))
         rd = dns.rdtypes.ANY.NS.NS(dns.rdataclass.IN, dns.rdatatype.NS, name)
     elif rectype == 'MX':
         preference = args[0][0]
-        exchange = dns.name.Name( args[0][1].split('.') )
+        exchange = dns.name.Name(args[0][1].split('.'))
         rd = dns.rdtypes.ANY.MX.MX(dns.rdataclass.IN, dns.rdatatype.MX, preference, exchange)
     elif rectype == 'A':
-        #name = dns.name.Name( args[0].split('.') )
+        # name = dns.name.Name( args[0].split('.') )
         name = args[0]
         rd = dns.rdtypes.IN.A.A(dns.rdataclass.IN, dns.rdatatype.A, name)
     elif rectype == 'AAAA':
         name = args[0]
         rd = dns.rdtypes.IN.AAAA.AAAA(dns.rdataclass.IN, dns.rdatatype.AAAA, name)
     elif rectype == 'CNAME':
-        name = dns.name.Name( args[0].split('.') )
+        name = dns.name.Name(args[0].split('.'))
         rd = dns.rdtypes.ANY.CNAME.CNAME(dns.rdataclass.IN, dns.rdatatype.CNAME, name)
     elif rectype == 'PTR':
         name = dns.name.Name(args[0].split('.'))
@@ -385,10 +392,10 @@ def _new_rdata(rectype, *args):
         priority = args[0][0]
         weight = args[0][1]
         port = args[0][2]
-        target = dns.name.Name( args[0][3].split('.') )
+        target = dns.name.Name(args[0][3].split('.'))
         rd = dns.rdtypes.IN.SRV.SRV(dns.rdataclass.IN, dns.rdatatype.SRV, priority, weight, port, target)
     else:
-        raise ValueError("rectype not supported: %s" %rectype)
+        raise ValueError("rectype not supported: %s" % rectype)
 
     return rd
 
